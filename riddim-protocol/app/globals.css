@@ -496,6 +496,7 @@ textarea {
 
 .intro-section,
 .steps-section,
+.platforms-section,
 .launch-section {
   max-width: 1180px;
   margin: auto;
@@ -573,6 +574,119 @@ textarea {
   color: var(--primary);
   font-size: 11px;
   margin-top: 20px;
+}
+
+.platforms-section {
+  border-bottom: 1px solid #292c29;
+}
+
+.platform-lede {
+  max-width: 720px;
+  margin: -22px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.platform-lede em {
+  color: var(--foreground);
+  font-style: normal;
+}
+
+.platform-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin: 48px 0 55px;
+}
+.flow-node {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #191b1a;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.flow-icon {
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.flow-node b {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.flow-node span {
+  color: #81877e;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.flow-sep {
+  align-self: center;
+  flex: none;
+  color: #5b5f57;
+}
+
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+.platform-card {
+  border: 1px solid #45483f;
+  border-radius: 8px;
+  padding: 22px 20px;
+  background: #191b1a;
+}
+.platform-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.platform-logo {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #24211c;
+  border: 1px solid #3a3a30;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.platform-card-head h3 {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.platform-tag {
+  color: #777d75;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+.platform-card strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.platform-card p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.platform-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 40px;
+  color: var(--primary);
+  font-size: 12px;
 }
 
 .manifesto {
@@ -1020,6 +1134,7 @@ footer {
 
   .intro-section,
   .steps-section,
+  .platforms-section,
   .launch-section {
     display: flex;
     flex-direction: column;
@@ -1032,6 +1147,25 @@ footer {
   }
   .intro-section p {
     font-size: 13px;
+  }
+  .platform-lede {
+    margin: 0;
+    font-size: 13px;
+  }
+  .platform-flow {
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+  }
+  .flow-sep {
+    transform: rotate(90deg);
+  }
+  .platform-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .platform-cta {
+    margin-top: 0;
   }
   .step-grid {
     display: flex;

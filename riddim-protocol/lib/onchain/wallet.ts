@@ -42,6 +42,33 @@ function assertConfigured() {
   }
 }
 
+// Once we've confirmed real bytecode lives at the configured address we never
+// re-check — the address is baked in at build time and can't change mid-session.
+let contractCodePresent = false;
+
+// Guard against the most common misconfiguration: NEXT_PUBLIC_CONTRACT_ADDRESS
+// pointing at a wallet (EOA) instead of a deployed RiddimRegistry. Sending
+// calldata to an address with no code makes the node reject the tx with the
+// opaque "External transactions to internal accounts cannot include data".
+// We surface a clear, actionable error before the wallet ever prompts.
+async function assertContractDeployed() {
+  if (contractCodePresent) return;
+  let code: Hex | undefined;
+  try {
+    code = await publicClient.getCode({ address: CONTRACT_ADDRESS as Address });
+  } catch {
+    // A transient RPC failure shouldn't block a write on a false negative —
+    // let the node be the final authority if the preflight can't complete.
+    return;
+  }
+  if (!code || code === "0x") {
+    throw new Error(
+      `No contract code found at ${CONTRACT_ADDRESS} on HSK Testnet. That address looks like a wallet, not a deployed RiddimRegistry. Deploy the contract (cd contracts && npm run deploy:hsk), set NEXT_PUBLIC_CONTRACT_ADDRESS to the printed contract address, and restart the dev server.`,
+    );
+  }
+  contractCodePresent = true;
+}
+
 /** Address of the wallet currently connected via RainbowKit, or null. */
 export async function getConnectedAccount(): Promise<Address | null> {
   return getAccount(wagmiConfig).address ?? null;
@@ -67,6 +94,7 @@ async function walletClient(): Promise<{
     );
   }
   await ensureHskNetwork();
+  await assertContractDeployed();
   const client = await getWalletClient(wagmiConfig, {
     account: address,
     chainId: hskTestnet.id,

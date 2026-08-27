@@ -19,7 +19,14 @@
       "Bash(node -e \"console.log\\(require\\('next/package.json'\\).version\\)\")",
       "Bash(rm -f tsconfig.tsbuildinfo *.tsbuildinfo)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(grep -nvE \"^#|^$\" contracts/.env)",
+      "Bash(node -e \"try{console.log\\(JSON.stringify\\(require\\('./contracts/package.json'\\).scripts,null,2\\)\\)}catch\\(e\\){console.log\\('no contracts/package.json'\\)}\")",
+      "Bash(curl -s -X POST https://testnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}')",
+      "Bash(curl -s -X POST https://testnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getCode\",\"params\":[\"__TRACKED_VAR__\",\"latest\"]}')",
+      "Bash(curl -s -X POST https://testnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getBalance\",\"params\":[\"__TRACKED_VAR__\",\"latest\"]}')",
+      "Bash(grep -v '^\\\\s*$')",
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; console.log\\(JSON.stringify\\(s,null,2\\)\\)\")"
     ]
   }
 }

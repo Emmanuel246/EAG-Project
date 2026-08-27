@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,6 +12,8 @@ import {
   Layers3,
   Menu,
   Music2,
+  Radio,
+  RefreshCw,
   ScanSearch,
   ShieldCheck,
   Sparkles,
@@ -38,6 +40,41 @@ const steps = [
     eyebrow: "03 / SPLIT",
     title: "Let the code pay everyone.",
     body: "Fans tip a track in testnet tokens and the contract routes each contributor their share automatically.",
+  },
+];
+
+const platformFlow = [
+  {
+    icon: Radio,
+    label: "Platform catalog",
+    sub: "Audiomack · Boomplay · Spotify",
+  },
+  { icon: RefreshCw, label: "Riddim adapter", sub: "Normalizes track metadata" },
+  { icon: Layers3, label: "Rights registry", sub: "Onchain owners & splits" },
+  { icon: HandCoins, label: "Auto payouts", sub: "Producers paid on earn" },
+];
+
+const platforms = [
+  {
+    initial: "AM",
+    name: "Audiomack",
+    tag: "ORIGINAL",
+    role: "Where a riddim first drops.",
+    body: "Register the original beat and its component owners the moment it's uploaded — the source of truth every later reuse points back to.",
+  },
+  {
+    initial: "BP",
+    name: "Boomplay",
+    tag: "STREAMING",
+    role: "Africa's largest catalog.",
+    body: "Match streaming plays to the riddim they sample, so revenue follows the reuse instead of stopping at the uploader.",
+  },
+  {
+    initial: "SP",
+    name: "Spotify",
+    tag: "DERIVED",
+    role: "Global reach, opaque splits.",
+    body: "Normalize derived-work metadata into one registry every contributor can verify — no more splits sorted out in DMs.",
   },
 ];
 
@@ -140,6 +177,9 @@ export default function Page() {
           <a href="#registry" onClick={() => setMenuOpen(false)}>
             Registry
           </a>
+          <a href="#platforms" onClick={() => setMenuOpen(false)}>
+            Platforms
+          </a>
           <Link
             className="nav-cta"
             href="/app"
@@ -238,6 +278,58 @@ export default function Page() {
             </article>
           ))}
         </div>
+      </section>
+      <section className="platforms-section" id="platforms">
+        <div className="section-heading">
+          <span className="section-label">FOR PLATFORMS</span>
+          <h2>
+            The settlement layer
+            <br />
+            under every stream.
+          </h2>
+        </div>
+        <p className="platform-lede">
+          Audiomack, Boomplay, and Spotify already host the music. What they lack
+          is a shared, enforceable answer to <em>who owns this beat and who gets
+          paid when it earns</em>. Riddim Protocol drops in as middleware:
+          platforms keep their catalog and player, and route rights and payouts
+          through one onchain registry — so producers get their split
+          automatically, not months later over DM.
+        </p>
+        <div className="platform-flow">
+          {platformFlow.map(({ icon: Icon, label, sub }, i) => (
+            <Fragment key={label}>
+              <div className="flow-node">
+                <div className="flow-icon">
+                  <Icon size={18} />
+                </div>
+                <b>{label}</b>
+                <span>{sub}</span>
+              </div>
+              {i < platformFlow.length - 1 && (
+                <ChevronRight className="flow-sep" size={18} />
+              )}
+            </Fragment>
+          ))}
+        </div>
+        <div className="platform-grid">
+          {platforms.map(({ initial, name, tag, role, body }) => (
+            <article className="platform-card" key={name}>
+              <div className="platform-card-head">
+                <span className="platform-logo">{initial}</span>
+                <div>
+                  <h3>{name}</h3>
+                  <span className="platform-tag">{tag}</span>
+                </div>
+              </div>
+              <strong>{role}</strong>
+              <p>{body}</p>
+            </article>
+          ))}
+        </div>
+        <Link className="platform-cta" href="/integrations">
+          See the adapter sync <ArrowRight size={15} />
+        </Link>
       </section>
       <section className="manifesto">
         <div className="manifesto-mark">
