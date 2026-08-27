@@ -1,52 +1,88 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Music4, Radio, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, Music4, Radio, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
-const integrations = [
+import { AppHeader } from "@/components/app-header";
+import { fetchJson } from "@/lib/api";
+
+type Adapter = { name: string; label: string; type: string; description: string; icon: typeof Music4 };
+
+const ADAPTERS: Adapter[] = [
   {
-    name: "Audiomack",
+    name: "audiomack",
+    label: "Audiomack",
     type: "creator metadata sync",
-    status: "ready",
-    description:
-      "Ingest artist and track metadata, then map it into a rights-aware license record.",
+    description: "Ingest artist and track metadata, then map it into a rights-aware license record.",
     icon: Music4,
   },
   {
-    name: "Spotify",
+    name: "spotify",
+    label: "Spotify",
     type: "rights verification",
-    status: "adapter ready",
-    description:
-      "Normalize track ownership and derivative-use metadata into the protocol registry.",
+    description: "Normalize track ownership and derivative-use metadata into the protocol registry.",
     icon: Radio,
   },
   {
-    name: "Boomplay",
+    name: "boomplay",
+    label: "Boomplay",
     type: "payout reconciliation",
-    status: "demo sync",
-    description:
-      "Align revenue and usage events with the split engine for payout reconciliation.",
+    description: "Align revenue and usage events with the split engine for payout reconciliation.",
     icon: ShieldCheck,
   },
 ];
 
+type PlatformRow = {
+  id?: string;
+  platform: string;
+  external_track_id: string;
+  title: string;
+  artist: string;
+  usage_type?: string;
+  license_status?: string;
+  source_url?: string | null;
+  last_synced_at?: string;
+};
+
 export default function IntegrationsPage() {
+  const [records, setRecords] = useState<PlatformRow[]>([]);
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetchJson<{ records: PlatformRow[] }>("/api/platforms");
+      setRecords(res.records ?? []);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const sync = async (platform: string) => {
+    setSyncing(platform);
+    setStatus(null);
+    try {
+      const res = await fetchJson<{ record: PlatformRow }>("/api/platforms", {
+        method: "POST",
+        body: JSON.stringify({ platform }),
+      });
+      setStatus(`Synced "${res.record.title}" from ${platform} into the rights registry.`);
+      await load();
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "Sync failed.");
+    } finally {
+      setSyncing(null);
+    }
+  };
+
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <Link href="/" className="landing-brand">
-          <span className="landing-mark">
-            <span>R</span>
-            <i />
-          </span>
-          <span>
-            RIDDIM<small>PROTOCOL</small>
-          </span>
-        </Link>
-        <div className="app-network">
-          <i /> HSK TESTNET · 177
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-layout narrow">
         <aside className="app-sidebar">
@@ -72,51 +108,73 @@ export default function IntegrationsPage() {
           </div>
 
           <div className="console-grid" style={{ maxWidth: 760 }}>
-            {integrations.map(
-              ({ name, type, status, description, icon: Icon }) => (
-                <article
-                  key={name}
-                  className="console-card action-card"
-                  style={{ minHeight: 220 }}
-                >
-                  <div className="card-heading">
-                    <div className="icon-tile">
-                      <Icon size={18} />
-                    </div>
-                    <span className="mono muted">{type}</span>
+            {ADAPTERS.map(({ name, label, type, description, icon: Icon }) => (
+              <article key={name} className="console-card action-card" style={{ minHeight: 210 }}>
+                <div className="card-heading">
+                  <div className="icon-tile">
+                    <Icon size={18} />
                   </div>
-                  <h3>{name}</h3>
-                  <p>{description}</p>
-                  <span className="mono muted">STATUS: {status}</span>
-                </article>
-              ),
+                  <span className="mono muted">{type}</span>
+                </div>
+                <h3>{label}</h3>
+                <p>{description}</p>
+                <button
+                  type="button"
+                  className="button-primary"
+                  onClick={() => sync(name)}
+                  disabled={syncing !== null}
+                  style={{ marginTop: "auto" }}
+                >
+                  {syncing === name ? "Syncing…" : "Sync a track"}
+                </button>
+              </article>
+            ))}
+          </div>
+
+          {status && (
+            <div className="mono muted" style={{ marginTop: 16 }}>
+              {status}
+            </div>
+          )}
+
+          <div className="console-card panel-card" style={{ marginTop: 20 }}>
+            <div className="mono muted">SYNCED RIGHTS RECORDS (canonical schema)</div>
+            {records.length === 0 ? (
+              <p>
+                No records yet. Run a sync above — each adapter maps external
+                track metadata into one shared rights record.
+              </p>
+            ) : (
+              <div className="data-list">
+                {records.map((rec) => (
+                  <div key={rec.id ?? `${rec.platform}-${rec.external_track_id}`} className="data-row">
+                    <span>
+                      <strong>{rec.title}</strong> — {rec.artist}
+                      <br />
+                      <span className="mono muted">
+                        {rec.platform} · {rec.external_track_id}
+                      </span>
+                    </span>
+                    <span className="mono muted">
+                      {rec.usage_type} · {rec.license_status}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          <div className="console-card panel-card">
+          <div className="console-card panel-card" style={{ marginTop: 16 }}>
             <div className="mono muted">ADAPTER PATTERN</div>
             <h3>Normalize every platform into a shared rights model</h3>
             <p>
               Each platform adapter maps track IDs, artist metadata, usage data,
-              and royalty terms into one canonical schema. The rights engine
-              then decides whether a usage is registered, licensed, or pending
-              review.
+              and royalty terms into one canonical schema. The rights engine then
+              decides whether a usage is registered, licensed, or pending review.
             </p>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginTop: 14,
-                color: "#f5a35b",
-              }}
-            >
-              <Sparkles size={13} /> Reuse detection, licensing, and payout
-              routing can all attach to that normalized record.
-            </div>
           </div>
 
-          <div style={{ marginTop: 28 }}>
+          <div style={{ marginTop: 24 }}>
             <Link href="/app" className="button-primary">
               Back to console <ArrowRight size={16} />
             </Link>

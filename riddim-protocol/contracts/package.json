@@ -1,0 +1,20 @@
+{
+  "name": "riddim-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RiddimRegistry smart contract + Hardhat toolchain for the Riddim Protocol (HSK Testnet, chain 133).",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:hsk": "hardhat run scripts/deploy.js --network hskTestnet",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "export-abi": "hardhat run scripts/export-abi.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.10"
+  }
+}

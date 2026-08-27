@@ -1,22 +1,32 @@
 import { NextResponse } from "next/server";
 
 import { cloudinaryClient } from "@/lib/cloudinary";
-import { supabase } from "@/lib/supabase";
+import { getChainStatus } from "@/lib/onchain/registry";
+import { probeTables } from "@/lib/supabase-service";
 
+// Deep health check: reports real connectivity for both the offchain DB
+// (per-table probe) and the onchain layer (RPC reachability + deployment).
 export async function GET() {
+  const [db, chain] = await Promise.all([
+    probeTables().catch((e) => ({
+      connected: false,
+      mode: "error" as const,
+      error: e instanceof Error ? e.message : String(e),
+      tables: {},
+    })),
+    getChainStatus().catch((e) => ({
+      configured: false,
+      reachable: false,
+      error: e instanceof Error ? e.message : String(e),
+    })),
+  ]);
+
   return NextResponse.json({
     status: "ok",
-    services: {
-      supabase: !!supabase,
+    offchain: {
+      supabase: db,
       cloudinary: !!cloudinaryClient,
-      messages: {
-        supabase: !!supabase
-          ? "Supabase client configured"
-          : "Missing SUPABASE env vars",
-        cloudinary: !!cloudinaryClient
-          ? "Cloudinary configured"
-          : "Missing Cloudinary env vars",
-      },
     },
+    onchain: chain,
   });
 }

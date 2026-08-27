@@ -1,53 +1,49 @@
-# EAG Hackathon
+# EAG Hackathon — Riddim Protocol
 
-This workspace contains the Riddim Protocol demo app and supporting docs for the EAG hackathon.
+Workspace for **Riddim Protocol**, a programmable music-rights app built for the EAG Global Buildathon.
 
-## What is in this project
+**👉 The authoritative documentation is [`riddim-protocol/README.md`](riddim-protocol/README.md)** — architecture, how it works, what's real vs stubbed, deviations from spec, and full setup. Start there.
 
-- landing page: the product story and pitch surface
-- app console: the creator dashboard flow
-- registration route: a working demo to register a riddim and preview its split
-- license route: a human-confirmed similarity review flow
-- tip route: a payment split simulator
+## One-liner
 
-## 4-phase build plan
+Register a beat (a *riddim*) as onchain ownership components, license reuse into tracks (an AI **proposes** matches, a human signs), license AI **voice clones** as first-class assets, and split every fan tip automatically across all rightful owners — enforced by a smart contract on **HSK Testnet (chain 133)**.
 
-### Phase 1 — Registry foundation
+## What's here
 
-- define the onchain-style metadata model
-- register a riddim with component percentages and payout wallets
-- validate split parsing and demo payload handling
-
-### Phase 2 — License & detection
-
-- review likely reuse matches
-- confirm the proposed license before it is applied
-
-### Phase 3 — Revenue routing
-
-- tip a track and distribute funds according to split percentages
-- show each wallet allocation in the UI
-
-### Phase 4 — Demo polish & launch
-
-- ensure the routing and layouts work cleanly
-- walk through the full demo story for judges
-- verify the build passes before submission
+| Path | What it is |
+| --- | --- |
+| [`riddim-protocol/`](riddim-protocol/) | The Next.js app (App Router) + `contracts/` (Hardhat, Solidity 0.8.20). The only interface. |
+| [`riddim-protocol/README.md`](riddim-protocol/README.md) | **As-built** docs — read this. |
+| [`riddim-protocol/SUPABASE_SETUP.md`](riddim-protocol/SUPABASE_SETUP.md) | Offchain mirror setup + schema migration. |
+| [`docs/`](docs/) | Original design docs (product PRD, technical PRD, build guide). Each carries an as-built note; they record the *plan*, not the shipped code. |
+| `HANDOFF.md` | Running handoff notes. |
 
 ## Run locally
 
 ```bash
 cd riddim-protocol
 npm install
-npm test
-npm run build
-npm run dev
+cp .env.example .env      # Supabase + Cloudinary; contract address optional (empty = offchain mode)
+npm test                  # 16 tests
+npm run build             # 22 routes
+npm run dev               # http://localhost:3000
 ```
+
+Contract (optional, enables onchain mode):
+
+```bash
+cd riddim-protocol/contracts
+npm install && npm test   # 15 tests
+npm run deploy:hsk        # then set NEXT_PUBLIC_CONTRACT_ADDRESS in the app .env
+```
+
+## The four phases, as built
+
+1. **Contract foundation** — `RiddimRegistry.sol` on HSK Testnet: riddims, licensing, voice clones, atomic tip splits, all safety checks (splits sum to 100%, 50% royalty cap, owner-only attach, no admin keys). 15 tests.
+2. **Chain layer (viem + RainbowKit)** — server-side reads + wallet-signed writes (RainbowKit/wagmi, wide range of wallets); deterministic reuse-detection module (no Telegram).
+3. **Next.js dashboard** — the only interface, with working forms for register / detect+license / voice / tip and a live console reading onchain state.
+4. **Integration, verification & docs** — platform adapters, health/status endpoints, green build + type-check + tests, and this documentation.
 
 ## Routes
 
-- / landing page
-- /app console dashboard
-- /register registration flow
-- /license similarity/license review
-- /tip tip-and-split flow
+`/` landing · `/app` live console · `/register` · `/license` (detect → human-signed license) · `/voice` · `/tip` · `/integrations`

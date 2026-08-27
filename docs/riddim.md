@@ -9,6 +9,9 @@
 
 ## 1. What Riddim Protocol Is
 
+> **⚠️ As-built note:** This is the original build guide. The shipped app deviates deliberately — see [`riddim-protocol/README.md`](../riddim-protocol/README.md) for the authoritative description. In short: **chain is 133, not 177** (177 is HashKey mainnet); **there is no Telegram bot and no standalone Node agent server** — the Next.js app is the only interface and viem runs inside it (server for reads, browser wallet for writes); **audio fingerprinting is stubbed** (the similarity/proposal pipeline is real); and **the AI only proposes a license — a human signs it in their own wallet.** Sections below referencing Telegraf, `/register` chat commands, or chain 177 describe the earlier plan, not the code.
+
+
 An onchain registry where:
 - A **producer** registers a riddim as a set of components (drums, melody, vocal hook), each with a preset ownership split and payout wallet.
 - An **artist** "licenses" that riddim to build a new track — a simple onchain call, not a legal negotiation.

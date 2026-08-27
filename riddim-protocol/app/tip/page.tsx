@@ -3,46 +3,111 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { AppHeader } from "@/components/app-header";
 import { fetchJson } from "@/lib/api";
-import { calculateSplit } from "@/lib/riddim";
+import { hskTestnet, txUrl } from "@/lib/onchain/chain";
+import { ACTIVE_CHAIN_ID, isContractConfigured } from "@/lib/onchain/config";
+import { computeTipSplit } from "@/lib/onchain/split";
+import { getConnectedAccount, tipTrack } from "@/lib/onchain/wallet";
 
-const track = {
-  id: 1,
-  title: "Afro Riddim 01",
-  contributors: [
-    { wallet: "0xAlice", share: 52 },
-    { wallet: "0xBob", share: 28 },
-    { wallet: "0xIfe", share: 20 },
-  ],
+type TrackFull = {
+  track: { id: number; title: string; artist: string; totalTippedFormatted: string };
+  riddims: Array<{
+    title: string;
+    components: Array<{ name: string; splitBps: number; payoutWallet: string }>;
+  }>;
+  voiceClones: Array<{ voiceName: string; royaltyRateBps: number; payoutWallet: string }>;
 };
 
 export default function TipPage() {
-  const [amount, setAmount] = useState(10);
-  const [tipSent, setTipSent] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const deployed = isContractConfigured();
 
-  const split = useMemo(
-    () => calculateSplit(amount, track.contributors),
-    [amount],
-  );
+  const [trackId, setTrackId] = useState("1");
+  const [amount, setAmount] = useState("1");
+  const [track, setTrack] = useState<TrackFull | null>(null);
+  const [loadStatus, setLoadStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const loadTrack = async () => {
+    setTrack(null);
+    setLoadStatus(null);
+    const tid = Number(trackId);
+    if (!Number.isInteger(tid) || tid <= 0) return setLoadStatus("Enter a valid track id.");
+    if (!deployed) return setLoadStatus("Contract not deployed — load requires onchain data.");
+    try {
+      const res = await fetchJson<{ configured: boolean } & Partial<TrackFull>>(
+        `/api/onchain/track/${tid}`,
+      );
+      if (!res.track) return setLoadStatus(`Track #${tid} not found onchain.`);
+      setTrack(res as TrackFull);
+    } catch (e) {
+      setLoadStatus(e instanceof Error ? e.message : "Failed to load track.");
+    }
+  };
+
+  const preview = useMemo(() => {
+    if (!track) return null;
+    return computeTipSplit(
+      amount,
+      track.riddims.map((r) => ({
+        title: r.title,
+        components: r.components.map((c) => ({
+          name: c.name,
+          splitBps: c.splitBps,
+          payoutWallet: c.payoutWallet,
+        })),
+      })),
+      track.voiceClones.map((v) => ({
+        voiceName: v.voiceName,
+        royaltyRateBps: v.royaltyRateBps,
+        payoutWallet: v.payoutWallet,
+      })),
+    );
+  }, [track, amount]);
+
+  const sendTip = async () => {
+    setTxHash(null);
+    const tid = Number(trackId);
+    if (!Number.isInteger(tid) || tid <= 0) return setStatus("Enter a valid track id.");
+    if (!(Number(amount) > 0)) return setStatus("Tip amount must be greater than 0.");
+    if (!deployed) return setStatus("Tipping requires the deployed contract (onchain-only).");
+
+    setSending(true);
+    try {
+      setStatus("Confirm the tip in your wallet… the split executes onchain.");
+      const res = await tipTrack(tid, amount);
+      setTxHash(res.hash);
+      const account = await getConnectedAccount();
+      await fetchJson("/api/tips", {
+        method: "POST",
+        body: JSON.stringify({
+          trackTitle: track?.track.title ?? `Track #${tid}`,
+          trackId: tid,
+          amount: Number(amount),
+          tipper: account,
+          split:
+            preview?.lines.map((l) => ({
+              wallet: l.wallet,
+              share: l.share,
+              amount: Number(l.amountHsk),
+            })) ?? [],
+          txHash: res.hash,
+          chainId: ACTIVE_CHAIN_ID,
+        }),
+      });
+      setStatus(`Tip sent and split across ${preview?.lines.length ?? 0} wallets.`);
+    } catch (e) {
+      setStatus(e instanceof Error ? e.message : "Tip failed.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <Link href="/" className="landing-brand">
-          <span className="landing-mark">
-            <span>R</span>
-            <i />
-          </span>
-          <span>
-            RIDDIM<small>PROTOCOL</small>
-          </span>
-        </Link>
-        <div className="app-network">
-          <i /> HSK TESTNET · 177
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-layout narrow">
         <aside className="app-sidebar">
@@ -56,8 +121,8 @@ export default function TipPage() {
             <em>See it split.</em>
           </h1>
           <p>
-            Fans tip a track and the revenue is routed according to the
-            registered component distribution.
+            The contract splits your tip onchain: voice-clone royalties come off
+            the top, then the remainder flows to every riddim component owner.
           </p>
         </aside>
 
@@ -65,62 +130,94 @@ export default function TipPage() {
           <div className="app-intro">
             <div>
               <span className="section-label">FAN SUPPORT</span>
-              <h2>{track.title}</h2>
+              <h2>Tip a track</h2>
             </div>
           </div>
 
           <div className="console-card panel-card">
-            <div className="mono muted">TIP AMOUNT</div>
+            <label className="mono muted">TRACK ID</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input type="number" value={trackId} onChange={(e) => setTrackId(e.target.value)} />
+              <button type="button" className="ghost-button" onClick={loadTrack}>
+                Load
+              </button>
+            </div>
+            {loadStatus && (
+              <div className="mono muted" style={{ marginTop: 10 }}>
+                {loadStatus}
+              </div>
+            )}
+            {track && (
+              <div style={{ marginTop: 12 }}>
+                <h3>{track.track.title}</h3>
+                <p className="mono muted">
+                  {track.riddims.length} riddim(s) · {track.voiceClones.length} voice
+                  clone(s) · {track.track.totalTippedFormatted} HSK tipped so far
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="console-card panel-card" style={{ marginTop: 16 }}>
+            <label className="mono muted">TIP AMOUNT (HSK)</label>
             <input
               type="number"
+              step="0.01"
               value={amount}
-              onChange={(event) => setAmount(Number(event.target.value) || 0)}
+              onChange={(e) => setAmount(e.target.value)}
             />
             <button
+              type="button"
               className="button-primary"
-              disabled={isSubmitting}
-              onClick={async () => {
-                setIsSubmitting(true);
-                setStatus("Sending tip...");
-
-                try {
-                  await fetchJson("/api/tips", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      trackTitle: track.title,
-                      amount,
-                    }),
-                  });
-
-                  setTipSent(true);
-                  setStatus("Tip processed and split synced.");
-                } catch {
-                  setTipSent(true);
-                  setStatus("Tip processed in demo mode.");
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
+              style={{ marginTop: 12 }}
+              onClick={sendTip}
+              disabled={sending}
             >
-              {tipSent ? "Tip sent" : isSubmitting ? "Sending..." : "Send tip"}
+              {sending ? "Sending…" : "Send tip (sign in wallet)"}
             </button>
             {status && (
               <div className="mono muted" style={{ marginTop: 12 }}>
                 {status}
               </div>
             )}
+            {txHash && (
+              <a
+                className="tx-link"
+                href={txUrl(txHash, hskTestnet.id)}
+                target="_blank"
+                rel="noreferrer"
+                style={{ display: "block", marginTop: 8 }}
+              >
+                View transaction ↗
+              </a>
+            )}
           </div>
 
-          <div className="console-card panel-card">
-            <div className="mono muted">AUTO-SPLIT</div>
-            <ul className="saved-list">
-              {split.map((entry) => (
-                <li key={entry.wallet}>
-                  {entry.wallet}: {entry.share}% → {entry.amount} HSK
-                </li>
-              ))}
-            </ul>
-          </div>
+          {preview && (
+            <div className="console-card panel-card" style={{ marginTop: 16 }}>
+              <div className="mono muted">SPLIT PREVIEW (mirrors the contract)</div>
+              <div className="data-list">
+                {preview.lines.map((l, i) => (
+                  <div key={i} className="data-row">
+                    <span>
+                      {l.kind === "voice" ? "🎤 " : ""}
+                      {l.label}
+                      <br />
+                      <span className="mono muted">{l.wallet}</span>
+                    </span>
+                    <span className="mono">
+                      {l.amountHsk} HSK · {l.share}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {Number(preview.dustHsk) > 0 && (
+                <div className="mono muted" style={{ marginTop: 10 }}>
+                  Rounding dust retained by contract: {preview.dustHsk} HSK
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </main>

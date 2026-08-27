@@ -1,13 +1,12 @@
 # Supabase setup for Riddim Protocol
 
-This project is built as a hackathon prototype and is designed to support a real off-chain data layer through Supabase while remaining honest about demo logic when credentials are not configured.
+Riddim Protocol keeps the **smart contract as the source of truth** and uses Supabase as a fast **offchain mirror / index** of registry state. The app is designed to run with or without Supabase: when credentials (or a specific table) are missing, every data function transparently falls back to an in-memory demo store and the UI labels itself "offchain mode." Nothing crashes.
 
 ## 1. Create a Supabase project
 
-1. Sign in to Supabase.
-2. Create a new project.
-3. Copy the project URL and anon key.
-4. Add them to your local environment:
+1. Sign in to Supabase and create a new project.
+2. Copy the project URL, anon key, and service-role key.
+3. Add them to `riddim-protocol/.env`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
@@ -15,35 +14,46 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
-## 2. Apply the schema
+## 2. Apply the schema (required for live mode)
 
-Open the SQL editor in Supabase and run the schema from:
+`supabase-js` **cannot run DDL**, so schema creation is a one-time manual step. Open the **SQL editor** in Supabase and run the full contents of:
 
 - `supabase/schema.sql`
 
-That script creates the tables used by the prototype:
+The script is **idempotent** (`create table if not exists` + `alter table … add column if not exists`), so it is safe to re-run after updates. It creates:
 
-- `profiles`
-- `riddims`
-- `license_matches`
-- `tips`
-- `platform_integrations`
+| Table | Role |
+| --- | --- |
+| `profiles` | Optional creator profiles. |
+| `riddims` | Mirror of registered riddims + components. Onchain link: `onchain_riddim_id`, `tx_hash`, `chain_id`. |
+| `tracks` | Mirror of licensed tracks. Onchain link: `onchain_track_id`, `tx_hash`, `chain_id`. |
+| `voice_clones` | Mirror of registered voice clones (name, `royalty_bps`, payout, `onchain_voice_id`). |
+| `licenses` | Reuse-license records (`riddim_id`, `track_id`, `similarity`, `proposed_by` = `ai`/`human`, `tx_hash`, `chain_id`). |
+| `tips` | Tip records with the computed split, `tx_hash`, `chain_id`. |
+| `detections` | AI reuse-check log (query title, matched riddim, similarity, confidence band, status). |
+| `platform_records` | Canonical rights records from platform adapters. Unique on `(platform, external_track_id)`. |
+| `platform_integrations` | Legacy table kept for backward compatibility. |
 
-## 3. Enable storage
+> **Until you run the script,** any entity whose table is missing simply uses the demo fallback. You can verify what is live at any time via the health endpoint (below).
 
-If you want to use Cloudinary or Supabase Storage for uploaded demo assets:
+## 3. Media storage (optional)
 
-- enable storage in Supabase
-- configure a bucket named `media` or adjust the bucket names in the app logic
+Uploaded demo assets go to **Cloudinary** (`NEXT_PUBLIC_CLOUDINARY_*` + `CLOUDINARY_API_SECRET`). No Supabase Storage bucket is required.
 
-## 4. App behavior
+## 4. Verify connectivity
 
-The app will:
+With the app running (`npm run dev`), hit:
 
-- use Supabase when environment values are present
-- automatically fall back to demo data when the environment is not configured
-- keep the UI honest about what is live vs demo-backed data
+```
+GET /api/health
+```
 
-## 5. Important note
+It calls `probeTables()` and reports `mode: "live" | "partial" | "demo"` plus a per-table breakdown, alongside the onchain status (chain 133, reachable, contract address, latest block). This is the fastest way to confirm the offchain layer is actually wired up.
 
-This is still a prototype. The data layer is real-ready, but the actual service connection depends on your own Supabase project credentials and environment setup.
+## 5. App behavior summary
+
+- **Supabase reachable + tables present** → live mirror (`mode: live`).
+- **Some tables missing** → those entities fall back to demo (`mode: partial`); the rest stay live.
+- **No credentials** → full demo store (`mode: demo`); the contract can still be the source of truth if `NEXT_PUBLIC_CONTRACT_ADDRESS` is set.
+
+This is a hackathon prototype: the data layer is real and production-shaped, but the live connection depends on your own Supabase project and running `schema.sql`.

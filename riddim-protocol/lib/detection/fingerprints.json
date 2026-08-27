@@ -1,0 +1,47 @@
+{
+  "_comment": "STUB fingerprint library for reuse detection. In production, `fingerprint` would be an embedding produced by an audio model (e.g. a CNN over a mel-spectrogram). Here they are hand-authored 8-dim vectors so the demo is deterministic and the confidence bands are reproducible. riddimId is the onchain RiddimRegistry id the match maps to once that riddim is registered.",
+  "dimensions": 8,
+  "library": [
+    {
+      "riddimId": 1,
+      "title": "Lagos Nights",
+      "artist": "DJ Layi",
+      "fingerprint": [0.9, 0.15, 0.4, 0.25, 0.7, 0.3, 0.55, 0.6]
+    },
+    {
+      "riddimId": 2,
+      "title": "Afro Vibrations",
+      "artist": "Nia Sol",
+      "fingerprint": [0.2, 0.85, 0.3, 0.65, 0.15, 0.5, 0.7, 0.4]
+    },
+    {
+      "riddimId": 3,
+      "title": "Pidgin Love",
+      "artist": "Moyo K",
+      "fingerprint": [0.5, 0.5, 0.8, 0.2, 0.35, 0.75, 0.25, 0.45]
+    },
+    {
+      "riddimId": 4,
+      "title": "Highlife Morning",
+      "artist": "Kemi T",
+      "fingerprint": [0.3, 0.25, 0.2, 0.85, 0.6, 0.4, 0.35, 0.7]
+    }
+  ],
+  "samples": [
+    {
+      "title": "Lagos Nights (Refix)",
+      "note": "Near-identical reuse of Lagos Nights — expected HIGH confidence.",
+      "fingerprint": [0.88, 0.17, 0.39, 0.26, 0.71, 0.29, 0.55, 0.61]
+    },
+    {
+      "title": "Sunrise Blend",
+      "note": "Partial resemblance to Afro Vibrations — expected MEDIUM confidence (human review).",
+      "fingerprint": [0.35, 0.6, 0.5, 0.5, 0.4, 0.45, 0.5, 0.35]
+    },
+    {
+      "title": "Original Composition",
+      "note": "Distinct work — expected NO match.",
+      "fingerprint": [0.1, 0.1, 0.95, 0.1, 0.9, 0.15, 0.1, 0.2]
+    }
+  ]
+}

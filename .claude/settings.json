@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sS -m 15 -L -X POST https://testnet.hsk.xyz/rpc -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' -w \"\\\\n[HTTP %{http_code}] [final: %{url_effective}]\\\\n\")",
+      "Bash(curl -sS -m 15 -X POST https://ethereum-sepolia-rpc.publicnode.com -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' -w \"\\\\n[HTTP %{http_code}]\\\\n\")",
+      "WebSearch",
+      "Bash(curl -sS -m 10 -X POST https://testnet.hsk.xyz -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}')",
+      "Bash(curl -sS -m 10 -X POST https://testnet.hsk.xyz -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}')",
+      "Bash(curl -sS -m 10 -X POST https://testnet.hsk.xyz -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_gasPrice\",\"params\":[],\"id\":1}')",
+      "Bash(python3 -c \"print\\('chainId 0x85 =', int\\('0x85',16\\)\\)\")",
+      "Bash(npm test *)",
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const p=require\\('./package.json'\\).dependencies; console.log\\('rainbowkit', p['@rainbow-me/rainbowkit']\\); console.log\\('wagmi', p['wagmi']\\); console.log\\('react-query', p['@tanstack/react-query']\\); console.log\\('viem', p['viem']\\);\")",
+      "Bash(node -e \"console.log\\(require.resolve\\('@wagmi/core'\\)\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc exit: $?\")",
+      "Bash(node -e \"console.log\\(require\\('next/package.json'\\).version\\)\")",
+      "Bash(rm -f tsconfig.tsbuildinfo *.tsbuildinfo)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"next-server\")"
+    ]
+  }
+}

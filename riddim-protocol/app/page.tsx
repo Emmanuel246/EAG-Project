@@ -58,7 +58,7 @@ function RegistryCard() {
           <i /> LIVE REGISTRY PREVIEW
         </span>
         <span className="stage-network">
-          HSK TESTNET · 177 <ChevronRight size={13} />
+          HSK TESTNET · 133 <ChevronRight size={13} />
         </span>
       </div>
       <div className="track-row">
@@ -190,7 +190,7 @@ export default function Page() {
           <Zap size={14} /> PROGRAMMABLE RIGHTS FOR AFRICAN MUSIC
         </div>
         <div>
-          HSK TESTNET · CHAIN 177 <span>●</span>
+          HSK TESTNET · CHAIN 133 <span>●</span>
         </div>
         <div>
           HUMAN-CONFIRMED AI <span>●</span>
@@ -268,7 +268,7 @@ export default function Page() {
             <Layers3 size={22} />
           </div>
           <strong>Start with the registry</strong>
-          <span>HSK Testnet · chain 177 · testnet tokens</span>
+          <span>HSK Testnet · chain 133 · testnet tokens</span>
           <Link className="button-primary" href="/app">
             Explore the protocol <ArrowRight size={17} />
           </Link>

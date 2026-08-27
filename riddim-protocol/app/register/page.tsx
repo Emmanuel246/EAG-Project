@@ -2,74 +2,107 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import type { Address } from "viem";
 
+import { AppHeader } from "@/components/app-header";
 import { fetchJson } from "@/lib/api";
-import { parseRiddimRegistration } from "@/lib/riddim";
+import { hskTestnet, txUrl } from "@/lib/onchain/chain";
+import { ACTIVE_CHAIN_ID, isContractConfigured } from "@/lib/onchain/config";
+import { getConnectedAccount, registerRiddim } from "@/lib/onchain/wallet";
 
-const seedRiddims = [
-  {
-    id: 1,
-    title: "Afro Vibes",
-    components: [
-      { name: "drums", share: 40, wallet: "0xAlice" },
-      { name: "melody", share: 60, wallet: "0xBob" },
-    ],
-  },
-  {
-    id: 2,
-    title: "Amapiano Echo",
-    components: [
-      { name: "kick", share: 35, wallet: "0xSeyi" },
-      { name: "keys", share: 45, wallet: "0xMaya" },
-      { name: "hook", share: 20, wallet: "0xIfe" },
-    ],
-  },
-];
+type Row = { name: string; percent: string; wallet: string };
+
+const emptyRow: Row = { name: "", percent: "", wallet: "" };
 
 export default function RegisterPage() {
-  const [title, setTitle] = useState("Afro Vibes");
-  const [rawInput, setRawInput] = useState(
-    "Afro Vibes|drums:40:0xAlice|melody:60:0xBob",
-  );
-  const [saved, setSaved] = useState<string[]>([]);
+  const [title, setTitle] = useState("Lagos Nights");
+  const [rows, setRows] = useState<Row[]>([
+    { name: "drums", percent: "40", wallet: "" },
+    { name: "melody", percent: "60", wallet: "" },
+  ]);
   const [status, setStatus] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const preview = useMemo(() => {
-    try {
-      return parseRiddimRegistration(rawInput);
-    } catch {
-      return null;
-    }
-  }, [rawInput]);
+  const totalPercent = useMemo(
+    () => rows.reduce((sum, r) => sum + (Number(r.percent) || 0), 0),
+    [rows],
+  );
+  const sumsTo100 = Math.round(totalPercent * 100) === 10000;
+  const deployed = isContractConfigured();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const setRow = (i: number, patch: Partial<Row>) =>
+    setRows((cur) => cur.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const addRow = () => setRows((cur) => [...cur, { ...emptyRow }]);
+  const removeRow = (i: number) =>
+    setRows((cur) => (cur.length > 1 ? cur.filter((_, idx) => idx !== i) : cur));
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const registration = preview ?? {
-      title: title || "Untitled riddim",
-      components: [],
-    };
-    const item = `${registration.title} (${registration.components.length} components)`;
+    setTxHash(null);
+
+    if (!title.trim()) return setStatus("A title is required.");
+    if (!sumsTo100)
+      return setStatus(`Splits must sum to exactly 100% (currently ${totalPercent}%).`);
+    if (rows.some((r) => !r.name.trim() || !r.wallet.trim()))
+      return setStatus("Every component needs a name and a payout wallet.");
+
+    const components = rows.map((r) => ({
+      name: r.name.trim(),
+      share: Number(r.percent),
+      splitBps: Math.round(Number(r.percent) * 100),
+      payoutWallet: r.wallet.trim() as Address,
+    }));
 
     setIsSubmitting(true);
-    setStatus("Submitting registration...");
-
     try {
-      await fetchJson("/api/riddims", {
-        method: "POST",
-        body: JSON.stringify({
-          title: registration.title,
-          producer_wallet: "0xDemoProducer",
-          status: "registered",
-          components: registration.components,
-        }),
-      });
-
-      setSaved((current) => [item, ...current].slice(0, 5));
-      setStatus("Registration synced successfully.");
-    } catch {
-      setSaved((current) => [item, ...current].slice(0, 5));
-      setStatus("Registration saved in demo mode.");
+      if (deployed) {
+        setStatus("Confirm the registration in your wallet…");
+        const { hash, riddimId } = await registerRiddim(
+          title.trim(),
+          components.map((c) => ({
+            name: c.name,
+            splitBps: c.splitBps,
+            payoutWallet: c.payoutWallet,
+          })),
+        );
+        setTxHash(hash);
+        setStatus(`Registered onchain as riddim #${riddimId ?? "?"}. Saving mirror…`);
+        const account = await getConnectedAccount();
+        await fetchJson("/api/riddims", {
+          method: "POST",
+          body: JSON.stringify({
+            title: title.trim(),
+            producer_wallet: account,
+            status: "registered",
+            components: components.map((c) => ({
+              name: c.name,
+              share: c.share,
+              wallet: c.payoutWallet,
+            })),
+            onchainRiddimId: riddimId,
+            txHash: hash,
+            chainId: ACTIVE_CHAIN_ID,
+          }),
+        });
+        setStatus(`Riddim #${riddimId ?? "?"} registered and mirrored.`);
+      } else {
+        await fetchJson("/api/riddims", {
+          method: "POST",
+          body: JSON.stringify({
+            title: title.trim(),
+            status: "registered",
+            components: components.map((c) => ({
+              name: c.name,
+              share: c.share,
+              wallet: c.payoutWallet,
+            })),
+          }),
+        });
+        setStatus("Recorded offchain (contract not deployed yet).");
+      }
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -77,20 +110,7 @@ export default function RegisterPage() {
 
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <Link href="/" className="landing-brand">
-          <span className="landing-mark">
-            <span>R</span>
-            <i />
-          </span>
-          <span>
-            RIDDIM<small>PROTOCOL</small>
-          </span>
-        </Link>
-        <div className="app-network">
-          <i /> HSK TESTNET · 177
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-layout narrow">
         <aside className="app-sidebar">
@@ -104,8 +124,8 @@ export default function RegisterPage() {
             <em>beat.</em>
           </h1>
           <p>
-            Submit a riddim title and format component ownership as each
-            segment’s wallet and percentage split.
+            Split ownership across components. The contract requires the shares
+            to sum to exactly 100% — enforced onchain.
           </p>
         </aside>
 
@@ -122,76 +142,85 @@ export default function RegisterPage() {
               Riddim title
               <input
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Afro Vibes"
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Lagos Nights"
               />
             </label>
 
-            <label>
-              Registration payload
-              <textarea
-                value={rawInput}
-                onChange={(event) => setRawInput(event.target.value)}
-                rows={6}
-                placeholder="Afro Vibes|drums:40:0xAlice|melody:60:0xBob"
-              />
-            </label>
+            <div className="mono muted" style={{ marginTop: 4 }}>
+              COMPONENTS · OWNERSHIP SPLIT
+            </div>
+            {rows.map((row, i) => (
+              <div
+                key={i}
+                style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}
+              >
+                <input
+                  style={{ flex: "1 1 120px" }}
+                  value={row.name}
+                  onChange={(e) => setRow(i, { name: e.target.value })}
+                  placeholder="component (e.g. drums)"
+                />
+                <input
+                  style={{ width: 90 }}
+                  type="number"
+                  value={row.percent}
+                  onChange={(e) => setRow(i, { percent: e.target.value })}
+                  placeholder="%"
+                />
+                <input
+                  style={{ flex: "2 1 220px" }}
+                  value={row.wallet}
+                  onChange={(e) => setRow(i, { wallet: e.target.value })}
+                  placeholder="0x payout wallet"
+                />
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => removeRow(i)}
+                  aria-label="Remove component"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
 
-            <div className="preview-card">
-              <div className="mono muted">PREVIEW</div>
-              {preview ? (
-                <>
-                  <strong>{preview.title}</strong>
-                  <ul>
-                    {preview.components.map((component) => (
-                      <li key={`${component.name}-${component.wallet}`}>
-                        {component.name}: {component.share}% →{" "}
-                        {component.wallet}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <p>Enter a valid registration string to preview the split.</p>
-              )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <button type="button" className="ghost-button" onClick={addRow}>
+                + Add component
+              </button>
+              <span
+                className="mono"
+                style={{ color: sumsTo100 ? "#7CFFB2" : "#f7b7a2" }}
+              >
+                TOTAL: {totalPercent}% {sumsTo100 ? "✓" : "(must be 100%)"}
+              </span>
             </div>
 
             <button
               type="submit"
               className="button-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !sumsTo100}
             >
-              {isSubmitting ? "Submitting..." : "Register riddim"}
+              {isSubmitting
+                ? "Submitting…"
+                : deployed
+                  ? "Register riddim (sign in wallet)"
+                  : "Register riddim (offchain)"}
             </button>
             {status && <div className="mono muted">{status}</div>}
-          </form>
-
-          <div className="console-card panel-card stacked">
-            <div className="mono muted">RECENT REGISTRATIONS</div>
-            {saved.length === 0 ? (
-              <p>No registrations yet. Use the demo payload to see the flow.</p>
-            ) : (
-              <ul className="saved-list">
-                {saved.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+            {txHash && (
+              <a
+                className="mono"
+                href={txUrl(txHash, hskTestnet.id)}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "#f5a35b" }}
+              >
+                View transaction ↗
+              </a>
             )}
-          </div>
-
-          <div className="console-grid demo-grid">
-            {seedRiddims.map((riddim) => (
-              <article key={riddim.id} className="console-card action-card">
-                <span className="mono muted">RIDDIM #{riddim.id}</span>
-                <h3>{riddim.title}</h3>
-                <p>
-                  {riddim.components
-                    .map((component) => `${component.name} ${component.share}%`)
-                    .join(" · ")}
-                </p>
-              </article>
-            ))}
-          </div>
+          </form>
         </section>
       </div>
     </main>

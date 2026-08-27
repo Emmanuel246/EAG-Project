@@ -8,6 +8,9 @@
 
 ## 1. Problem
 
+> **⚠️ As-built note:** This is the original product PRD. The shipped app deviates deliberately — see [`riddim-protocol/README.md`](../riddim-protocol/README.md) for the authoritative description. Notably: **chain 133, not 177**; **the Telegram bot was cut** (the Next.js app is the only interface); **voice clones are a first-class onchain asset**; and **the AI only proposes reuse matches — a human confirms and signs.** Rows mentioning a Telegram interface below describe the earlier plan, not the code.
+
+
 Nigerian and African music has no functioning mechanical-licensing infrastructure. Collection societies (COSON, MCSN) are widely regarded as dysfunctional, so producers and session contributors have no reliable way to get paid when their work is reused.
 
 This is worsened by two specific, current phenomena:

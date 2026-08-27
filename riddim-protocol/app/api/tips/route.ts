@@ -1,44 +1,25 @@
 import { NextResponse } from "next/server";
 
-const demoTips = [
-  {
-    id: "tip-1",
-    trackTitle: "Afro Riddim 01",
-    amount: 10,
-    split: [
-      { wallet: "0xAlice", share: 52, amount: 5.2 },
-      { wallet: "0xBob", share: 28, amount: 2.8 },
-      { wallet: "0xIfe", share: 20, amount: 2 },
-    ],
-    createdAt: new Date().toISOString(),
-  },
-];
+import { createTip, listTips } from "@/lib/supabase-service";
 
 export async function GET() {
-  return NextResponse.json({ tips: demoTips });
+  const tips = await listTips();
+  return NextResponse.json({ tips });
 }
 
+// Mirror a tip after the onchain split has executed. The contract performs the
+// real transfers; the `split` here is the computed breakdown for display,
+// passed by the client from the track's onchain component data.
 export async function POST(request: Request) {
   const payload = await request.json();
-  const amount = Number(payload.amount ?? 0);
-  const split = [
-    {
-      wallet: "0xAlice",
-      share: 52,
-      amount: Number((amount * 0.52).toFixed(2)),
-    },
-    { wallet: "0xBob", share: 28, amount: Number((amount * 0.28).toFixed(2)) },
-    { wallet: "0xIfe", share: 20, amount: Number((amount * 0.2).toFixed(2)) },
-  ];
-
-  const item = {
-    id: `tip-${Date.now()}`,
-    trackTitle: payload.trackTitle ?? "Afro Riddim 01",
-    amount,
-    split,
-    createdAt: new Date().toISOString(),
-  };
-
-  demoTips.unshift(item);
-  return NextResponse.json({ tip: item }, { status: 201 });
+  const tip = await createTip({
+    track_title: payload.trackTitle ?? payload.track_title ?? "Untitled track",
+    amount: Number(payload.amount ?? 0),
+    split: payload.split ?? [],
+    track_id: payload.trackId ?? payload.track_id ?? null,
+    tipper_wallet: payload.tipper ?? payload.tipper_wallet ?? null,
+    tx_hash: payload.txHash ?? payload.tx_hash ?? null,
+    chain_id: payload.chainId ?? payload.chain_id ?? null,
+  });
+  return NextResponse.json({ tip }, { status: 201 });
 }

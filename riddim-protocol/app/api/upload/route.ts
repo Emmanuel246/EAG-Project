@@ -15,6 +15,9 @@ export async function POST(request: Request) {
     );
   }
 
+  // Capture into a local so the non-null narrowing holds inside the closure below.
+  const cloudinary = cloudinaryClient;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -27,7 +30,7 @@ export async function POST(request: Request) {
 
     const result = await new Promise<{ secure_url: string; public_id: string }>(
       (resolve, reject) => {
-        const uploadStream = cloudinaryClient.uploader.upload_stream(
+        const uploadStream = cloudinary.uploader.upload_stream(
           {
             resource_type: "auto",
             folder: "riddim-protocol",

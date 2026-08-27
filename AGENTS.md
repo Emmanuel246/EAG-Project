@@ -46,7 +46,7 @@ The app should support this journey:
 ## Wallet rules
 
 - Wallet interactions should be described as prototype or demo wallet logic unless a real provider is actually wired.
-- If a wallet provider is used, it should be an EIP-1193 style provider pattern using window.ethereum.
+- Wallet auth is wired with RainbowKit + wagmi (config in lib/onchain/wagmi.ts, provider tree in app/providers.tsx). The header uses RainbowKit's `<ConnectButton />`; writes go through wagmi's wallet client in lib/onchain/wallet.ts, and reads use a viem public client.
 - Do not imply a successful real wallet connection unless the code actually requests and receives accounts.
 - The app must not show duplicate wallet states or fabricated wallet counts.
 - Use a single connected-wallet state instead of multiple independent wallet lists.

@@ -1107,3 +1107,81 @@ footer {
     gap: 12px;
   }
 }
+
+/* ---- MVP action-form utilities (added for the functional dashboard) ---- */
+.ghost-button {
+  background: transparent;
+  color: #bbbdb5;
+  border: 1px solid #30332f;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.ghost-button:hover {
+  border-color: var(--primary);
+  color: #edf0eb;
+}
+
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.confidence-high {
+  background: rgba(124, 255, 178, 0.14);
+  color: #7cffb2;
+}
+.confidence-medium {
+  background: rgba(245, 163, 91, 0.16);
+  color: #f5a35b;
+}
+.confidence-none {
+  background: rgba(150, 150, 150, 0.14);
+  color: #b7bcb2;
+}
+
+.proposal-card {
+  background: linear-gradient(180deg, rgba(245, 163, 91, 0.1), rgba(245, 163, 91, 0.02));
+  border: 1px solid rgba(245, 163, 91, 0.4);
+  border-radius: 10px;
+  padding: 18px;
+  margin-top: 16px;
+}
+.proposal-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #f5a35b;
+  margin-bottom: 8px;
+}
+
+.data-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #121514;
+  border: 1px solid #262925;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.data-row .mono {
+  color: #9aa096;
+}
+.tx-link {
+  color: #f5a35b;
+  font-size: 12px;
+}

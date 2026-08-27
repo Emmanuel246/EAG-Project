@@ -2,7 +2,29 @@
 
 > **Version:** 1.0 · Aug 27 2026
 > **Event:** EAG Global Buildathon — Nigeria
-> **Chain:** HSK Testnet (chain ID 177)
+> **Chain:** HSK Testnet (chain ID 133)
+
+---
+
+## ⚠️ As-built note (read first)
+
+This PRD is the **original design**. The shipped implementation deviates in a few
+deliberate places — see [`riddim-protocol/README.md`](../riddim-protocol/README.md)
+for the authoritative as-built description. Key differences:
+
+- **Chain is 133, not 177.** Chain 177 is HashKey *mainnet*; the real HSK **testnet is
+  chain 133** at `https://testnet.hsk.xyz` (no `/rpc` suffix). The RPC in older drafts 404s.
+- **No Telegram bot and no standalone Node agent server.** The "Client Layer" and
+  "Agent Layer" in the diagram below are collapsed into the **Next.js app**: viem runs
+  server-side for reads and in the browser wallet for writes. The Next.js dashboard is
+  the only user interface.
+- **Voice clones are a first-class onchain asset** (`VoiceCloneLicense`) with their own
+  royalty rate (capped 50%); `tipTrack` splits across riddim components **and** attached
+  voice clones.
+- **Audio fingerprinting is stubbed** — the similarity/confidence/proposal pipeline is
+  real, but feature extraction uses deterministic fixed vectors, not DSP.
+- **The AI never transacts.** It proposes a license; a human reviews and signs in their
+  own wallet. Enforced structurally (the server holds no key).
 
 ---
 

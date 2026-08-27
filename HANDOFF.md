@@ -16,7 +16,7 @@ Riddim Protocol is a hackathon MVP focused on programmable music rights for Afri
 - Landing page polished and aligned to the product story
 - App dashboard route exists and is wired to the main product flow
 - Dashboard overview was aligned to the provided reference layout and dark product aesthetic
-- Wallet action now uses a single real wallet-connect pattern with window.ethereum
+- Wallet auth uses RainbowKit + wagmi (wide range of wallets: MetaMask, Rainbow, Coinbase, WalletConnect); writes are signed via the connected wallet in lib/onchain/wallet.ts
 - Registration page exists and previews a parsed riddim payload
 - License page exists and reviews a likely reuse match
 - Tip page exists and calculates the split based on component percentages
