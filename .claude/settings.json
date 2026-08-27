@@ -26,7 +26,14 @@
       "Bash(curl -s -X POST https://testnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getCode\",\"params\":[\"__TRACKED_VAR__\",\"latest\"]}')",
       "Bash(curl -s -X POST https://testnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getBalance\",\"params\":[\"__TRACKED_VAR__\",\"latest\"]}')",
       "Bash(grep -v '^\\\\s*$')",
-      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; console.log\\(JSON.stringify\\(s,null,2\\)\\)\")"
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; console.log\\(JSON.stringify\\(s,null,2\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./riddim-protocol/package.json'\\); console.log\\('name:',p.name\\); console.log\\('engines:',JSON.stringify\\(p.engines||'\\(none\\)'\\)\\); console.log\\('next:',p.dependencies?.next\\); console.log\\('scripts:',JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(curl -s -m 15 -X POST https://mainnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_chainId\",\"params\":[]}')",
+      "Bash(curl -s -m 15 -X POST https://mainnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getBalance\",\"params\":[\"0xbDF12371ac5AD2fa65BF4A6606D1f5A6C0Ea70eb\",\"latest\"]}')",
+      "Bash(curl -s -m 15 -X POST https://mainnet.hsk.xyz -H 'content-type: application/json' --data '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getCode\",\"params\":[\"0xbDF12371ac5AD2fa65BF4A6606D1f5A6C0Ea70eb\",\"latest\"]}')",
+      "Bash(awk '{print $9}')",
+      "Bash(grep -vE '^$')",
+      "Bash(git ls-tree *)"
     ]
   }
 }

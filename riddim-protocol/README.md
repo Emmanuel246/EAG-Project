@@ -91,17 +91,33 @@ npm run dev               # http://localhost:3000
 
 ---
 
+## Deploy the web app (Vercel)
+
+The Next.js app lives in the **`riddim-protocol/` subdirectory**, not the repo root — so the one setting that makes or breaks the deploy is the **Root Directory**.
+
+1. In Vercel, **Add New… → Project** and import this repo.
+2. **Set Root Directory to `riddim-protocol`** (on the import screen, or Settings → General → Root Directory). Without it, Vercel looks for `package.json` at the repo root, finds none, and the build fails — this is the most common cause of a failed deploy here.
+3. Framework preset auto-detects as **Next.js**; leave the build & output settings at their defaults.
+4. **Add environment variables** (Settings → Environment Variables). `.env` is gitignored, so nothing uploads automatically — add each key from the table above: the Supabase trio, the Cloudinary trio, `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`, `NEXT_PUBLIC_CONTRACT_ADDRESS` (or leave it unset for offchain mode), `NEXT_PUBLIC_CHAIN_ID`, `NEXT_PUBLIC_HSK_RPC_URL`, and `NEXT_PUBLIC_BASE_URL` set to your Vercel URL (e.g. `https://your-app.vercel.app`) — **not** `localhost`.
+5. **Never add `PRIVATE_KEY` to Vercel.** It is used only by the Hardhat toolchain in `contracts/` to deploy the contract from your own machine; the web app never reads it.
+6. Deploy. `NEXT_PUBLIC_*` values are inlined at **build time**, so after editing any of them you must **redeploy** for the change to take effect.
+
+---
+
 ## Smart contract
 
 ```bash
 cd contracts
 npm install
 npm test                      # 15 tests
-npm run deploy:hsk            # needs DEPLOYER_PRIVATE_KEY in contracts/.env
+npm run deploy:hsk            # → HSK Testnet (chain 133); needs PRIVATE_KEY in contracts/.env
+npm run deploy:hsk-mainnet    # → HSK Mainnet (chain 177); real HSK — see the mainnet note below
 npm run export-abi            # regenerate the ABI the app imports
 ```
 
 Deploying prints the contract address — put it in the app's `NEXT_PUBLIC_CONTRACT_ADDRESS`. `npm run deploy:sepolia` is the demo-day fallback (same contract, same flow).
+
+**Mainnet (optional).** `npm run deploy:hsk-mainnet` deploys the same contract to **HSK Mainnet (chain 177)**. Mainnet runs a flat **500 gwei** base fee, so the deploy costs **~1.1 HSK** (~2.16M gas) and each register / license / tip costs roughly 0.1–0.3 HSK — fund the deployer wallet accordingly. The app is wired to **testnet** by default; repointing it to mainnet also means updating the chain definition in [lib/onchain/chain.ts](lib/onchain/chain.ts) to chain 177 and setting `NEXT_PUBLIC_CHAIN_ID` / `NEXT_PUBLIC_HSK_RPC_URL` to the mainnet values.
 
 **Safety properties baked into `RiddimRegistry.sol`:**
 - component splits must sum to `10000` bps (100%)

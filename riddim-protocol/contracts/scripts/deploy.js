@@ -31,9 +31,11 @@ async function main() {
   const address = await registry.getAddress();
 
   const explorer =
-    network === "hskTestnet"
-      ? `https://testnet-explorer.hsk.xyz/address/${address}`
-      : `(explorer for ${network})`;
+    network === "hskMainnet"
+      ? `https://explorer.hsk.xyz/address/${address}`
+      : network === "hskTestnet"
+        ? `https://testnet-explorer.hsk.xyz/address/${address}`
+        : `(explorer for ${network})`;
 
   console.log(`\n✅ RiddimRegistry deployed to: ${address}`);
   console.log(`   Explorer: ${explorer}`);
